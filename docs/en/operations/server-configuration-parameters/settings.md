@@ -69,8 +69,6 @@ If no conditions met for a data part, ClickHouse uses the `lz4` compression.
 </compression>
 ```
 
-<!--
-
 ## encryption {#server-settings-encryption}
 
 Configures a command to obtain a key to be used by [encryption codecs](../../sql-reference/statements/create/table.md#create-query-encryption-codecs). Key (or keys) should be written in environment variables or set in the configuration file.
@@ -150,7 +148,6 @@ Or it can be set in hex:
 
 Everything mentioned above can be applied for `aes_256_gcm_siv` (but the key must be 32 bytes long).
 
--->
 
 ## custom_settings_prefixes {#custom_settings_prefixes}
 
@@ -508,7 +505,7 @@ Keys:
 -   `level` – Logging level. Acceptable values: `trace`, `debug`, `information`, `warning`, `error`.
 -   `log` – The log file. Contains all the entries according to `level`.
 -   `errorlog` – Error log file.
--   `size` – Size of the file. Applies to `log`and`errorlog`. Once the file reaches `size`, ClickHouse archives and renames it, and creates a new log file in its place.
+-   `size` – Size of the file. Applies to `log` and `errorlog`. Once the file reaches `size`, ClickHouse archives and renames it, and creates a new log file in its place.
 -   `count` – The number of archived log files that ClickHouse stores.
 
 **Example**
@@ -753,9 +750,13 @@ The value 0 means that you can delete all tables without any restrictions.
 
 ## max_thread_pool_size {#max-thread-pool-size}
 
-The maximum number of threads in the Global Thread pool.
+ClickHouse uses threads from the Global Thread pool to process queries. If there is no idle thread to process a query, then a new thread is created in the pool. `max_thread_pool_size` limits the maximum number of threads in the pool.
 
-Default value: 10000.
+Possible values: 
+
+-   Positive integer.
+
+Default value: `10000`.
 
 **Example**
 
@@ -765,9 +766,13 @@ Default value: 10000.
 
 ## max_thread_pool_free_size {#max-thread-pool-free-size}
 
-The number of threads that are always held in the Global Thread pool.
+If the number of **idle** threads in the Global Thread pool is greater than `max_thread_pool_free_size`, then ClickHouse releases resources occupied by some threads and the pool size is decreased. Threads can be created again if necessary.
 
-Default value: 1000.
+Possible values: 
+
+-   Positive integer.
+
+Default value: `1000`.
 
 **Example**
 
@@ -777,9 +782,13 @@ Default value: 1000.
 
 ## thread_pool_queue_size {#thread-pool-queue-size}
 
-The limit to the number of jobs that can be scheduled on the Global Thread pool. Increasing queue size leads to larger memory usage. It is recommended to keep this value equal to the `max_thread_pool_size`.
+The maximum number of jobs that can be scheduled on the Global Thread pool. Increasing queue size leads to larger memory usage. It is recommended to keep this value equal to [max_thread_pool_size](#max-thread-pool-size).
 
-Default value: 10000.
+Possible values: 
+
+-   Positive integer.
+
+Default value: `10000`.
 
 **Example**
 
@@ -1446,7 +1455,7 @@ You can also define sections `memory` — means storing information only in memo
 
 To add an LDAP server as a remote user directory of users that are not defined locally, define a single `ldap` section with a following parameters:
 -   `server` — one of LDAP server names defined in `ldap_servers` config section. This parameter is mandatory and cannot be empty.
--   `roles` — section with a list of locally defined roles that will be assigned to each user retrieved from the LDAP server. If no roles are specified, user will not be able to perform any actions after authentication. If any of the listed roles is not defined locally at the time of authentication, the authenthication attept will fail as if the provided password was incorrect.
+-   `roles` — section with a list of locally defined roles that will be assigned to each user retrieved from the LDAP server. If no roles are specified, user will not be able to perform any actions after authentication. If any of the listed roles is not defined locally at the time of authentication, the authentication attempt will fail as if the provided password was incorrect.
 
 **Example**
 
@@ -1510,3 +1519,4 @@ Possible values:
 -   Positive integer.
 
 Default value: `10000`.
+

@@ -149,6 +149,10 @@ if (ENABLE_FUZZING)
     set (ENABLE_JEMALLOC 0)
     set (ENABLE_CHECK_HEAVY_BUILDS 1)
     set (GLIBC_COMPATIBILITY OFF)
+
+    # For codegen_select_fuzzer
+    set (ENABLE_PROTOBUF 1)
+    set (USE_INTERNAL_PROTOBUF_LIBRARY 1)
 endif()
 
 # Global libraries
@@ -223,7 +227,7 @@ if (OS_DARWIN)
     # from a _specific_ library, which is what we need.
     set(WHOLE_ARCHIVE -force_load)
     # The `-noall_load` flag is the default and now obsolete.
-    set(NO_WHOLE_ARCHIVE "")
+    set(NO_WHOLE_ARCHIVE "-undefined,error") # Effectively, a no-op. Here to avoid empty "-Wl, " sequence to be generated in the command line.
 else ()
     set(WHOLE_ARCHIVE --whole-archive)
     set(NO_WHOLE_ARCHIVE --no-whole-archive)
@@ -251,6 +255,13 @@ if (NOT CMAKE_BUILD_TYPE_UC STREQUAL "RELEASE")
         endif()
     endif ()
 endif()
+
+if (CMAKE_BUILD_TYPE_UC STREQUAL "DEBUG")
+    set(USE_DEBUG_HELPERS ON)
+else ()
+    set(USE_DEBUG_HELPERS ON)
+endif()
+option(USE_DEBUG_HELPERS "Enable debug helpers" ${USE_DEBUG_HELPERS})
 
 # Create BuildID when using lld. For other linkers it is created by default.
 if (LINKER_NAME MATCHES "lld$")
@@ -436,7 +447,7 @@ if (MAKE_STATIC_LIBRARIES)
         # It's disabled for ARM because otherwise ClickHouse cannot run on Android.
         set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -fno-pie")
         set (CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} -fno-pie")
-        set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-no-pie")
+        set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -no-pie -Wl,-no-pie")
     endif ()
 else ()
     set (CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -497,6 +508,7 @@ include (cmake/find/hdfs3.cmake) # uses protobuf
 include (cmake/find/poco.cmake)
 include (cmake/find/curl.cmake)
 include (cmake/find/s3.cmake)
+include (cmake/find/blob_storage.cmake)
 include (cmake/find/base64.cmake)
 include (cmake/find/parquet.cmake)
 include (cmake/find/simdjson.cmake)
@@ -540,8 +552,6 @@ endif ()
 include (cmake/find/mysqlclient.cmake)
 
 # When testing for memory leaks with Valgrind, don't link tcmalloc or jemalloc.
-
-include (cmake/print_flags.cmake)
 
 if (TARGET global-group)
     install (EXPORT global DESTINATION cmake)
@@ -594,6 +604,7 @@ include_directories(${ConfigIncludePath})
 
 # Add as many warnings as possible for our own code.
 include (cmake/warnings.cmake)
+include (cmake/print_flags.cmake)
 
 add_subdirectory (base)
 add_subdirectory (src)

@@ -249,6 +249,10 @@ endif()
 # - sentry-native
 add_subdirectory (curl-cmake)
 
+if (USE_INTERNAL_AZURE_BLOB_STORAGE_LIBRARY)
+    add_subdirectory(azure-cmake)
+endif()
+
 if (USE_SENTRY)
     add_subdirectory (sentry-native-cmake)
 endif()
@@ -301,9 +305,10 @@ endif()
 # instead of controlling it via CMAKE_FOLDER.
 
 function (ensure_target_rooted_in _target _folder)
-    # Skip INTERFACE library targets, since FOLDER property is not available for them.
+    # Skip aliases and INTERFACE library targets, since FOLDER property is not available/writable for them.
+    get_target_property (_target_aliased "${_target}" ALIASED_TARGET)
     get_target_property (_target_type "${_target}" TYPE)
-    if (_target_type STREQUAL "INTERFACE_LIBRARY")
+    if (_target_aliased OR _target_type STREQUAL "INTERFACE_LIBRARY")
         return ()
     endif ()
 
